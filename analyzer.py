@@ -1,4 +1,5 @@
 import anthropic
+import base64
 import os
 from dotenv import load_dotenv
 
@@ -42,6 +43,36 @@ def analyze(raw_text: str) -> str:
             {
                 "role": "user",
                 "content": f"Voici les résultats du bilan biologique à analyser :\n\n{raw_text}",
+            }
+        ],
+    )
+    return message.content[0].text
+
+
+def analyze_image(image_bytes: bytes, media_type: str) -> str:
+    client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+    b64 = base64.standard_b64encode(image_bytes).decode("utf-8")
+    message = client.messages.create(
+        model="claude-opus-4-7",
+        max_tokens=2000,
+        system=SYSTEM_PROMPT,
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "image",
+                        "source": {
+                            "type": "base64",
+                            "media_type": media_type,
+                            "data": b64,
+                        },
+                    },
+                    {
+                        "type": "text",
+                        "text": "Voici la photo d'un compte-rendu de bilan biologique. Extrais toutes les valeurs visibles et rédige le rapport d'interprétation structuré.",
+                    },
+                ],
             }
         ],
     )

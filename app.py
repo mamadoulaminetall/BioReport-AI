@@ -3,7 +3,7 @@ import os
 import datetime
 from dotenv import load_dotenv
 from pdf_parser import extract_text
-from analyzer import analyze
+from analyzer import analyze, analyze_image
 
 load_dotenv()
 
@@ -258,8 +258,10 @@ col_left, col_right = st.columns([1, 1], gap="large")
 with col_left:
     st.markdown('<div class="card"><div class="card-label">📥 Saisie des résultats</div>', unsafe_allow_html=True)
 
-    input_mode = st.radio("", ["📄 PDF", "✏️ Texte libre"], horizontal=True, label_visibility="collapsed")
+    input_mode = st.radio("", ["📄 PDF", "📷 Photo", "✏️ Texte libre"], horizontal=True, label_visibility="collapsed")
     raw_text = ""
+    image_data = None
+    image_media_type = None
 
     if input_mode == "📄 PDF":
         uploaded = st.file_uploader("", type=["pdf"], label_visibility="collapsed")
@@ -269,6 +271,17 @@ with col_left:
             st.success(f"✓ {len(raw_text)} caractères extraits")
             with st.expander("Aperçu du texte"):
                 st.text(raw_text[:2000] + ("…" if len(raw_text) > 2000 else ""))
+
+    elif input_mode == "📷 Photo":
+        uploaded_img = st.file_uploader(
+            "", type=["jpg", "jpeg", "png", "webp"], label_visibility="collapsed"
+        )
+        if uploaded_img:
+            image_data = uploaded_img.read()
+            ext = uploaded_img.type  # e.g. "image/jpeg"
+            image_media_type = ext if ext in ("image/jpeg", "image/png", "image/webp", "image/gif") else "image/jpeg"
+            st.image(image_data, caption="Photo importée", use_container_width=True)
+
     else:
         raw_text = st.text_area(
             "",
@@ -290,7 +303,8 @@ with col_left:
     )
     st.markdown('</div>', unsafe_allow_html=True)
 
-    analyze_btn = st.button("🔍  Analyser le bilan", disabled=not raw_text.strip())
+    ready = raw_text.strip() or image_data is not None
+    analyze_btn = st.button("🔍  Analyser le bilan", disabled=not ready)
 
 with col_right:
     if st.session_state.current_report:
@@ -324,16 +338,19 @@ with col_right:
         """, unsafe_allow_html=True)
 
 # ── TRIGGER ──────────────────────────────────────────────────────────────
-if analyze_btn and raw_text.strip():
+if analyze_btn and (raw_text.strip() or image_data):
     if not os.environ.get("ANTHROPIC_API_KEY"):
         st.error("Clé API Anthropic manquante — ajoutez-la dans la barre latérale.")
     else:
         with st.spinner("Analyse IA en cours…"):
             try:
-                report = analyze(raw_text)
+                if image_data:
+                    report = analyze_image(image_data, image_media_type)
+                else:
+                    report = analyze(raw_text)
                 ts = datetime.datetime.now().strftime("%H:%M")
                 entry_label = label.strip() or f"Bilan {len(st.session_state.history) + 1} · {ts}"
-                st.session_state.history.insert(0, {"label": entry_label, "report": report, "raw": raw_text})
+                st.session_state.history.insert(0, {"label": entry_label, "report": report, "raw": raw_text or "📷 image"})
                 st.session_state.current_report = report
                 st.session_state.current_label = entry_label
                 st.rerun()
