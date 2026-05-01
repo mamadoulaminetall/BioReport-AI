@@ -2,7 +2,9 @@
 
 **Interprétation automatique de bilan biologique par IA — pour les laboratoires et médecins prescripteurs.**
 
-Uploadez un PDF de résultats biologiques ou collez les valeurs en texte libre → BioReport AI génère en quelques secondes un rapport structuré, clair et exploitable par le clinicien.
+🚀 **[Accéder à l'application → bioreport-ai.streamlit.app](https://bioreport-ai.streamlit.app)**
+
+Uploadez un PDF de résultats biologiques, prenez une photo ou collez les valeurs en texte libre → BioReport AI génère en quelques secondes un rapport structuré, clair et exploitable par le clinicien.
 
 ---
 
