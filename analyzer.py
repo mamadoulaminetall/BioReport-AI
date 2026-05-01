@@ -53,6 +53,15 @@ def _build_context_block(patient_ctx: dict | None, treatments_text: str | None) 
             p.append(f"Antécédents : {patient_ctx['antecedents']}")
         if p:
             parts.append("**Contexte patient :**\n" + "\n".join(p))
+        if patient_ctx.get("greffe_cardiaque"):
+            t = ["**Greffe cardiaque :**"]
+            if patient_ctx.get("phase_greffe"):
+                t.append(f"Phase : {patient_ctx['phase_greffe']}")
+            if patient_ctx.get("tacro_dose") is not None:
+                t.append(f"Dose tacrolimus prescrite : {patient_ctx['tacro_dose']} mg/j")
+            if patient_ctx.get("tacro_residuel") is not None:
+                t.append(f"Taux résiduel tacrolimus : {patient_ctx['tacro_residuel']} ng/mL")
+            parts.append("\n".join(t))
     if treatments_text:
         parts.append(f"**Traitements en cours :**\n{treatments_text}")
     return "\n\n".join(parts)

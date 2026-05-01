@@ -324,6 +324,37 @@ with col_left:
         height=80,
         placeholder="Ex: HTA, diabète type 2, insuffisance rénale chronique…",
     )
+
+    is_transplant = st.checkbox("🫀 Patient greffé cardiaque")
+    greffe_phase = tacro_dose = tacro_residuel = None
+
+    if is_transplant:
+        greffe_phase = st.selectbox(
+            "Phase post-greffe",
+            [
+                "—",
+                "Phase initiale (J0–3 mois)",
+                "Maintenance précoce (3–12 mois)",
+                "Maintenance tardive (> 1 an)",
+                "Suspicion de rejet aigu",
+                "Suivi long terme (> 5 ans)",
+            ],
+            index=0,
+        )
+        tg1, tg2 = st.columns(2)
+        with tg1:
+            tacro_dose = st.number_input(
+                "Dose tacrolimus (mg/j)",
+                min_value=0.0, max_value=50.0, value=None,
+                placeholder="—", format="%.1f",
+            )
+        with tg2:
+            tacro_residuel = st.number_input(
+                "Résidu tacrolimus (ng/mL)",
+                min_value=0.0, max_value=100.0, value=None,
+                placeholder="—", format="%.1f",
+            )
+
     st.markdown('</div>', unsafe_allow_html=True)
 
     # ── TREATMENTS ────────────────────────────────────────────────────────
@@ -476,6 +507,14 @@ if analyze_btn and (raw_text.strip() or image_data):
                     patient_ctx["motif"] = patient_motif.strip()
                 if patient_antecedents.strip():
                     patient_ctx["antecedents"] = patient_antecedents.strip()
+                if is_transplant:
+                    patient_ctx["greffe_cardiaque"] = True
+                    if greffe_phase and greffe_phase != "—":
+                        patient_ctx["phase_greffe"] = greffe_phase
+                    if tacro_dose is not None:
+                        patient_ctx["tacro_dose"] = tacro_dose
+                    if tacro_residuel is not None:
+                        patient_ctx["tacro_residuel"] = tacro_residuel
                 patient_ctx = patient_ctx or None
 
                 # Extract treatments from photo if needed
