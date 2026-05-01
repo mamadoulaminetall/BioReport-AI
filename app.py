@@ -4,6 +4,7 @@ import datetime
 from dotenv import load_dotenv
 from pdf_parser import extract_text
 from analyzer import analyze, analyze_image, extract_treatments
+from report_pdf import generate_pdf
 
 load_dotenv()
 
@@ -353,25 +354,99 @@ with col_left:
     ready = bool(raw_text.strip()) or bool(image_data)
     analyze_btn = st.button("🔍  Analyser le bilan", disabled=not ready)
 
+SECTION_STYLE = {
+    "1": ("border-left:4px solid #dc2626", "#fef2f2", "#dc2626"),
+    "2": ("border-left:4px solid #2563eb", "#eff6ff", "#2563eb"),
+    "3": ("border-left:4px solid #d97706", "#fffbeb", "#d97706"),
+    "4": ("border-left:4px solid #16a34a", "#f0fdf4", "#16a34a"),
+    "5": ("border-left:4px solid #7c3aed", "#f5f3ff", "#7c3aed"),
+}
+
+def _render_report_html(report_text: str, label: str) -> str:
+    import re
+    ts = datetime.datetime.now().strftime("%d/%m/%Y %H:%M")
+    html = f"""
+    <div style="background:white;border-radius:14px;border:1px solid #e2e8f0;
+                box-shadow:0 1px 4px rgba(0,0,0,0.05);overflow:hidden;font-family:Inter,sans-serif;">
+      <div style="background:linear-gradient(135deg,#1e3a5f,#2563eb);padding:1rem 1.5rem;
+                  display:flex;justify-content:space-between;align-items:center;">
+        <span style="color:white;font-weight:700;font-size:1rem;">📋 {label}</span>
+        <span style="color:rgba(255,255,255,.65);font-size:.78rem;">{ts}</span>
+      </div>
+      <div style="padding:1.25rem 1.5rem;">
+    """
+    # Intro block (patient context before first ##)
+    intro = re.split(r'(?=## \d)', report_text, maxsplit=1)[0].strip()
+    if intro:
+        for line in intro.split('\n'):
+            line = line.strip()
+            if line and line != '---':
+                line = re.sub(r'\*\*(.*?)\*\*', r'<strong>\1</strong>', line)
+                html += f'<p style="color:#475569;font-size:.88rem;margin:.25rem 0;">{line}</p>'
+        html += '<hr style="border:none;border-top:1px solid #e2e8f0;margin:.75rem 0;">'
+
+    sections = re.split(r'(?=## \d)', report_text)
+    for section in sections:
+        section = section.strip()
+        if not section:
+            continue
+        m = re.match(r'## (\d+)\. (.+)', section)
+        if not m:
+            continue
+        num = m.group(1)
+        title = f"{num}. {m.group(2)}"
+        border, bg, col = SECTION_STYLE.get(num, ("border-left:4px solid #2563eb", "#eff6ff", "#2563eb"))
+
+        html += f"""
+        <div style="{border};background:{bg};border-radius:0 8px 8px 0;
+                    padding:.6rem 1rem;margin:.5rem 0 .25rem;">
+          <span style="font-weight:700;font-size:.88rem;color:{col};">{title}</span>
+        </div>
+        <div style="padding:.25rem .5rem .5rem 1.25rem;">
+        """
+        body = section[m.end():].strip()
+        for line in body.split('\n'):
+            line = line.strip()
+            if not line:
+                continue
+            line = re.sub(r'\*\*(.*?)\*\*', r'<strong>\1</strong>', line)
+            line = re.sub(r'\*(.*?)\*', r'<em>\1</em>', line)
+            if line.startswith('- '):
+                line = '• ' + line[2:]
+            html += f'<p style="font-size:.88rem;color:#1e293b;line-height:1.7;margin:.2rem 0;">{line}</p>'
+        html += '</div>'
+
+    html += """
+      </div>
+      <div style="background:#f8fafc;border-top:1px solid #e2e8f0;padding:.6rem 1.5rem;
+                  text-align:center;font-size:.72rem;color:#94a3b8;font-style:italic;">
+        ⚠️ Aide à la décision uniquement — ne remplace pas le jugement du médecin prescripteur.
+      </div>
+    </div>
+    """
+    return html
+
+
 with col_right:
     if st.session_state.current_report:
-        ts_display = datetime.datetime.now().strftime("%d/%m/%Y %H:%M")
-        report_html = st.session_state.current_report.replace("\n", "<br>")
-        st.markdown(f"""
-        <div class="report-wrap">
-            <div class="report-head">
-                <span class="report-head-title">📋 {st.session_state.current_label}</span>
-                <span class="report-head-date">{ts_display}</span>
-            </div>
-            <div class="report-body">{report_html}</div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown(_render_report_html(
+            st.session_state.current_report,
+            st.session_state.current_label,
+        ), unsafe_allow_html=True)
 
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        pdf_ctx = st.session_state.get("last_patient_ctx")
+        pdf_bytes = generate_pdf(
+            st.session_state.current_report,
+            st.session_state.current_label,
+            pdf_ctx,
+        )
         st.download_button(
-            "⬇️  Télécharger le rapport (.txt)",
-            data=st.session_state.current_report,
-            file_name=f"bioreport_{datetime.datetime.now().strftime('%Y%m%d_%H%M')}.txt",
-            mime="text/plain",
+            "⬇️  Télécharger le rapport (PDF)",
+            data=pdf_bytes,
+            file_name=f"bioreport_{datetime.datetime.now().strftime('%Y%m%d_%H%M')}.pdf",
+            mime="application/pdf",
         )
     else:
         st.markdown("""
@@ -419,6 +494,7 @@ if analyze_btn and (raw_text.strip() or image_data):
                 st.session_state.history.insert(0, {"label": entry_label, "report": report, "raw": raw_text or "📷 image"})
                 st.session_state.current_report = report
                 st.session_state.current_label = entry_label
+                st.session_state.last_patient_ctx = patient_ctx
                 st.rerun()
             except Exception as e:
                 st.error(f"Erreur : {e}")
