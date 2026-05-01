@@ -3,7 +3,7 @@ import os
 import datetime
 from dotenv import load_dotenv
 from pdf_parser import extract_text
-from analyzer import analyze, analyze_image
+from analyzer import analyze, analyze_image, extract_treatments
 
 load_dotenv()
 
@@ -303,6 +303,51 @@ with col_left:
     )
     st.markdown('</div>', unsafe_allow_html=True)
 
+    # ── PATIENT STATUS ────────────────────────────────────────────────────
+    st.markdown('<div class="card"><div class="card-label">🧑‍⚕️ Statut du patient</div>', unsafe_allow_html=True)
+
+    pc1, pc2 = st.columns(2)
+    with pc1:
+        patient_age = st.number_input("Âge (ans)", min_value=0, max_value=120, value=None, placeholder="—", label_visibility="visible")
+    with pc2:
+        patient_sexe = st.selectbox("Sexe", ["—", "Homme", "Femme", "Autre"], index=0)
+
+    patient_motif = st.text_input(
+        "Motif de prescription",
+        placeholder="Ex: suivi diabète, bilan pré-opératoire, fatigue…",
+    )
+    patient_antecedents = st.text_area(
+        "Antécédents médicaux",
+        height=80,
+        placeholder="Ex: HTA, diabète type 2, insuffisance rénale chronique…",
+    )
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    # ── TREATMENTS ────────────────────────────────────────────────────────
+    st.markdown('<div class="card"><div class="card-label">💊 Traitements en cours</div>', unsafe_allow_html=True)
+
+    treat_mode = st.radio("", ["✏️ Saisie manuelle", "📷 Photo ordonnance"], horizontal=True, label_visibility="collapsed", key="treat_mode")
+
+    treatments_text = ""
+    treat_image_data = None
+    treat_media_type = None
+
+    if treat_mode == "✏️ Saisie manuelle":
+        treatments_text = st.text_area(
+            "",
+            height=90,
+            label_visibility="collapsed",
+            placeholder="Ex: Metformine 1000mg × 2/j, Ramipril 5mg × 1/j, Atorvastatine 40mg…",
+        )
+    else:
+        treat_img = st.file_uploader("", type=["jpg", "jpeg", "png", "webp"], label_visibility="collapsed", key="treat_upload")
+        if treat_img:
+            treat_image_data = treat_img.read()
+            treat_media_type = treat_img.type if treat_img.type in ("image/jpeg", "image/png", "image/webp") else "image/jpeg"
+            st.image(treat_image_data, caption="Ordonnance importée", use_container_width=True)
+
+    st.markdown('</div>', unsafe_allow_html=True)
+
     ready = raw_text.strip() or image_data is not None
     analyze_btn = st.button("🔍  Analyser le bilan", disabled=not ready)
 
@@ -344,10 +389,29 @@ if analyze_btn and (raw_text.strip() or image_data):
     else:
         with st.spinner("Analyse IA en cours…"):
             try:
+                # Build patient context dict
+                patient_ctx = {}
+                if patient_age:
+                    patient_ctx["age"] = int(patient_age)
+                if patient_sexe and patient_sexe != "—":
+                    patient_ctx["sexe"] = patient_sexe
+                if patient_motif.strip():
+                    patient_ctx["motif"] = patient_motif.strip()
+                if patient_antecedents.strip():
+                    patient_ctx["antecedents"] = patient_antecedents.strip()
+                patient_ctx = patient_ctx or None
+
+                # Extract treatments from photo if needed
+                final_treatments = treatments_text.strip() or None
+                if treat_image_data:
+                    with st.spinner("Extraction des traitements…"):
+                        final_treatments = extract_treatments(treat_image_data, treat_media_type)
+
                 if image_data:
-                    report = analyze_image(image_data, image_media_type)
+                    report = analyze_image(image_data, image_media_type, patient_ctx, final_treatments)
                 else:
-                    report = analyze(raw_text)
+                    report = analyze(raw_text, patient_ctx, final_treatments)
+
                 ts = datetime.datetime.now().strftime("%H:%M")
                 entry_label = label.strip() or f"Bilan {len(st.session_state.history) + 1} · {ts}"
                 st.session_state.history.insert(0, {"label": entry_label, "report": report, "raw": raw_text or "📷 image"})
