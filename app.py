@@ -325,10 +325,26 @@ with col_left:
         placeholder="Ex: HTA, diabète type 2, insuffisance rénale chronique…",
     )
 
-    is_transplant = st.checkbox("🫀 Patient greffé cardiaque")
-    greffe_phase = tacro_dose = tacro_residuel = None
+    is_transplant = st.checkbox("🏥 Patient transplanté")
+    type_greffe = greffe_phase = tacro_dose = tacro_residuel = None
 
     if is_transplant:
+        type_greffe = st.selectbox(
+            "Type de greffe",
+            [
+                "—",
+                "Greffe cardiaque",
+                "Greffe rénale",
+                "Greffe hépatique",
+                "Greffe pulmonaire",
+                "Greffe pancréatique",
+                "Greffe rein–pancréas",
+                "Greffe cœur–poumons",
+                "Greffe intestinale",
+                "Multi-organe",
+            ],
+            index=0,
+        )
         greffe_phase = st.selectbox(
             "Phase post-greffe",
             [
@@ -508,7 +524,9 @@ if analyze_btn and (raw_text.strip() or image_data):
                 if patient_antecedents.strip():
                     patient_ctx["antecedents"] = patient_antecedents.strip()
                 if is_transplant:
-                    patient_ctx["greffe_cardiaque"] = True
+                    patient_ctx["greffe"] = True
+                    if type_greffe and type_greffe != "—":
+                        patient_ctx["type_greffe"] = type_greffe
                     if greffe_phase and greffe_phase != "—":
                         patient_ctx["phase_greffe"] = greffe_phase
                     if tacro_dose is not None:

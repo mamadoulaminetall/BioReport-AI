@@ -32,6 +32,24 @@ Si des traitements sont en cours et que les résultats biologiques justifient un
 - Signale les interactions biologiques à surveiller (ex: statine + créatinine kinase, metformine + DFG)
 - Si aucun ajustement posologique n'est nécessaire, indique : ✅ Aucun ajustement posologique requis sur la base de ce bilan.
 
+**Si le contexte mentionne une transplantation d'organe**, applique systématiquement les règles suivantes de protection rénale et d'adaptation posologique :
+
+Tacrolimus (CNI) — cibles résiduelles C0 selon la phase :
+- Phase initiale (J0–3 mois) : 10–15 ng/mL (cardiaque/pulmonaire), 8–12 ng/mL (rénal/hépatique)
+- Maintenance précoce (3–12 mois) : 8–12 ng/mL (cardiaque), 6–10 ng/mL (rénal/hépatique)
+- Maintenance tardive (> 1 an) : 5–8 ng/mL (cardiaque), 4–7 ng/mL (rénal/hépatique)
+- Si C0 > cible : risque de néphrotoxicité — proposer réduction de dose + contrôle créatinine/DFG à J7
+- Si C0 < cible : risque de rejet — proposer augmentation de dose encadrée + contrôle à J3–J5
+
+Protection rénale spécifique chez le transplanté :
+- DFG < 60 mL/min/1,73 m² : envisager réduction des CNI, conversion vers protocole CNI-sparing (MMF/évérolimus), avis néphrologue
+- DFG < 30 mL/min/1,73 m² : contre-indiquer metformine, adapter les doses de tout médicament à élimination rénale, éviter les AINS et produits de contraste iodés
+- Protéinurie > 0,5 g/j : introduire ou renforcer IEC/ARA2 pour néphroprotection (sauf contre-indication)
+- Hyperkaliémie sous CNI/IEC : adapter les diurétiques, revoir l'association IEC + épargneur potassique
+- Hyperuricémie persistante sous tacrolimus : envisager allopurinol (attention interaction avec azathioprine — réduire azathioprine de 75%)
+- Anémie sous MMF (mycophénolate) : envisager réduction de dose si Hb < 9 g/dL
+- Hyponatrémie/hypomagnésémie : fréquentes sous CNI — supplémentation à envisager si symptomatique
+
 Règles strictes :
 - Langue : français médical, clair et concis
 - Ne jamais poser de diagnostic certain ni prescrire directement
@@ -53,14 +71,14 @@ def _build_context_block(patient_ctx: dict | None, treatments_text: str | None) 
             p.append(f"Antécédents : {patient_ctx['antecedents']}")
         if p:
             parts.append("**Contexte patient :**\n" + "\n".join(p))
-        if patient_ctx.get("greffe_cardiaque"):
-            t = ["**Greffe cardiaque :**"]
+        if patient_ctx.get("greffe"):
+            t = [f"**Transplantation — {patient_ctx.get('type_greffe', 'type non précisé')} :**"]
             if patient_ctx.get("phase_greffe"):
                 t.append(f"Phase : {patient_ctx['phase_greffe']}")
             if patient_ctx.get("tacro_dose") is not None:
                 t.append(f"Dose tacrolimus prescrite : {patient_ctx['tacro_dose']} mg/j")
             if patient_ctx.get("tacro_residuel") is not None:
-                t.append(f"Taux résiduel tacrolimus : {patient_ctx['tacro_residuel']} ng/mL")
+                t.append(f"Taux résiduel tacrolimus (C0) : {patient_ctx['tacro_residuel']} ng/mL")
             parts.append("\n".join(t))
     if treatments_text:
         parts.append(f"**Traitements en cours :**\n{treatments_text}")

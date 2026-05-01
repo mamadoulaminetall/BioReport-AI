@@ -110,17 +110,18 @@ def generate_pdf(report_text: str, label: str, patient_ctx: dict | None = None) 
                 _p("ANTECEDENTS", s_label), Paragraph(patient_ctx["antecedents"], s_val),
                 _p("", s_label), _p("", s_val),
             ])
-        if patient_ctx.get("greffe_cardiaque"):
-            if patient_ctx.get("phase_greffe"):
-                rows.append([
-                    _p("GREFFE CARD.", s_label), _p(patient_ctx["phase_greffe"], s_val),
-                    _p("", s_label), _p("", s_val),
-                ])
+        if patient_ctx.get("greffe"):
+            gtype = patient_ctx.get("type_greffe", "Transplantation")
+            gphase = patient_ctx.get("phase_greffe", "")
+            rows.append([
+                _p("TRANSPLANT.", s_label), _p(gtype, s_val),
+                _p("PHASE", s_label), _p(gphase or "—", s_val),
+            ])
             tacro_parts = []
             if patient_ctx.get("tacro_dose") is not None:
                 tacro_parts.append(f"Dose : {patient_ctx['tacro_dose']} mg/j")
             if patient_ctx.get("tacro_residuel") is not None:
-                tacro_parts.append(f"Résidu : {patient_ctx['tacro_residuel']} ng/mL")
+                tacro_parts.append(f"C0 : {patient_ctx['tacro_residuel']} ng/mL")
             if tacro_parts:
                 rows.append([
                     _p("TACROLIMUS", s_label), _p("   |   ".join(tacro_parts), s_val),
