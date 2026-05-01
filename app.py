@@ -214,9 +214,30 @@ with st.sidebar:
         if n else ""
     )
     st.markdown(f"""
-        <div style="margin-bottom:1.5rem;">
-            <div style="font-size:1.2rem;font-weight:700;color:white;">🧬 BioReport AI</div>
-            <div style="font-size:0.73rem;color:#475569;margin-top:3px;">Aide à la décision · v1.2</div>
+        <div style="margin-bottom:1.25rem;display:flex;flex-direction:column;align-items:center;">
+          <svg width="190" height="62" viewBox="0 0 220 72" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="hg2" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:#7c3aed"/>
+                <stop offset="100%" style="stop-color:#2563eb"/>
+              </linearGradient>
+              <linearGradient id="tg2" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" style="stop-color:#a78bfa"/>
+                <stop offset="100%" style="stop-color:#60a5fa"/>
+              </linearGradient>
+            </defs>
+            <path d="M30 18 C30 12 24 8 18 12 C12 16 12 24 18 30 L30 42 L42 30 C48 24 48 16 42 12 C36 8 30 12 30 18Z"
+                  fill="url(#hg2)" opacity="0.95"/>
+            <polyline points="14,30 19,30 22,22 25,38 28,26 31,30 38,30 41,30"
+                      fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>
+            <text x="56" y="32" font-family="'Helvetica Neue',Arial,sans-serif" font-size="22" font-weight="800"
+                  fill="url(#tg2)" letter-spacing="-0.5">MedFlow</text>
+            <rect x="158" y="16" width="26" height="18" rx="5" fill="url(#hg2)"/>
+            <text x="171" y="29" font-family="'Helvetica Neue',Arial,sans-serif" font-size="11" font-weight="700"
+                  fill="white" text-anchor="middle" letter-spacing="0.5">AI</text>
+            <text x="56" y="52" font-family="'Helvetica Neue',Arial,sans-serif" font-size="11" font-weight="400"
+                  fill="#94a3b8" letter-spacing="0.3">BioReport AI · v1.2</text>
+          </svg>
         </div>
         <hr style="border-color:#1e293b;margin-bottom:1rem;">
         <div style="font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;
@@ -256,7 +277,29 @@ st.markdown("""
             <div class="navbar-sub">Interprétation automatique de bilan biologique</div>
         </div>
     </div>
-    <span class="navbar-badge">Aide à la décision</span>
+    <svg width="145" height="48" viewBox="0 0 220 72" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="nhg" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:#7c3aed"/>
+          <stop offset="100%" style="stop-color:#2563eb"/>
+        </linearGradient>
+        <linearGradient id="ntg" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" style="stop-color:#c4b5fd"/>
+          <stop offset="100%" style="stop-color:#93c5fd"/>
+        </linearGradient>
+      </defs>
+      <path d="M30 18 C30 12 24 8 18 12 C12 16 12 24 18 30 L30 42 L42 30 C48 24 48 16 42 12 C36 8 30 12 30 18Z"
+            fill="url(#nhg)" opacity="0.95"/>
+      <polyline points="14,30 19,30 22,22 25,38 28,26 31,30 38,30 41,30"
+                fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>
+      <text x="56" y="32" font-family="'Helvetica Neue',Arial,sans-serif" font-size="22" font-weight="800"
+            fill="url(#ntg)" letter-spacing="-0.5">MedFlow</text>
+      <rect x="158" y="16" width="26" height="18" rx="5" fill="url(#nhg)"/>
+      <text x="171" y="29" font-family="'Helvetica Neue',Arial,sans-serif" font-size="11" font-weight="700"
+            fill="white" text-anchor="middle" letter-spacing="0.5">AI</text>
+      <text x="56" y="52" font-family="'Helvetica Neue',Arial,sans-serif" font-size="11" font-weight="400"
+            fill="rgba(255,255,255,0.5)" letter-spacing="0.3">Aide à la décision clinique</text>
+    </svg>
 </div>
 """, unsafe_allow_html=True)
 
