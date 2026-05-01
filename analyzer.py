@@ -122,7 +122,7 @@ def analyze(raw_text: str, patient_ctx: dict | None = None, treatments_text: str
 
     msg = _client().messages.create(
         model="claude-opus-4-7",
-        max_tokens=2000,
+        max_tokens=4000,
         system=SYSTEM_PROMPT,
         messages=[{"role": "user", "content": user_msg}],
     )
@@ -143,7 +143,7 @@ def analyze_image(images: list[tuple[bytes, str]], patient_ctx: dict | None = No
 
     msg = _client().messages.create(
         model="claude-opus-4-7",
-        max_tokens=2000,
+        max_tokens=4000,
         system=SYSTEM_PROMPT,
         messages=[{"role": "user", "content": content}],
     )
