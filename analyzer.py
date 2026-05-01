@@ -96,28 +96,22 @@ def analyze(raw_text: str, patient_ctx: dict | None = None, treatments_text: str
     return msg.content[0].text
 
 
-def analyze_image(image_bytes: bytes, media_type: str, patient_ctx: dict | None = None, treatments_text: str | None = None) -> str:
-    b64 = base64.standard_b64encode(image_bytes).decode("utf-8")
+def analyze_image(images: list[tuple[bytes, str]], patient_ctx: dict | None = None, treatments_text: str | None = None) -> str:
     ctx = _build_context_block(patient_ctx, treatments_text)
-    text_part = "Voici la photo d'un compte-rendu de bilan biologique. Extrais toutes les valeurs visibles et rédige le rapport d'interprétation structuré."
+    text_part = "Voici les photos d'un compte-rendu de bilan biologique. Extrais toutes les valeurs visibles sur l'ensemble des pages et rédige le rapport d'interprétation structuré."
     if ctx:
         text_part = f"{ctx}\n\n{text_part}"
+
+    content = []
+    for img_bytes, media_type in images:
+        b64 = base64.standard_b64encode(img_bytes).decode("utf-8")
+        content.append({"type": "image", "source": {"type": "base64", "media_type": media_type, "data": b64}})
+    content.append({"type": "text", "text": text_part})
 
     msg = _client().messages.create(
         model="claude-opus-4-7",
         max_tokens=2000,
         system=SYSTEM_PROMPT,
-        messages=[
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "image",
-                        "source": {"type": "base64", "media_type": media_type, "data": b64},
-                    },
-                    {"type": "text", "text": text_part},
-                ],
-            }
-        ],
+        messages=[{"role": "user", "content": content}],
     )
     return msg.content[0].text

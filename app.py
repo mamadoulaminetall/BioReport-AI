@@ -273,14 +273,16 @@ with col_left:
                 st.text(raw_text[:2000] + ("…" if len(raw_text) > 2000 else ""))
 
     elif input_mode == "📷 Photo":
-        uploaded_img = st.file_uploader(
-            "", type=["jpg", "jpeg", "png", "webp"], label_visibility="collapsed"
+        uploaded_imgs = st.file_uploader(
+            "", type=["jpg", "jpeg", "png", "webp"],
+            label_visibility="collapsed",
+            accept_multiple_files=True,
         )
-        if uploaded_img:
-            image_data = uploaded_img.read()
-            ext = uploaded_img.type  # e.g. "image/jpeg"
-            image_media_type = ext if ext in ("image/jpeg", "image/png", "image/webp", "image/gif") else "image/jpeg"
-            st.image(image_data, caption="Photo importée", use_container_width=True)
+        if uploaded_imgs:
+            image_data = [(f.read(), f.type if f.type in ("image/jpeg", "image/png", "image/webp") else "image/jpeg") for f in uploaded_imgs]
+            cols = st.columns(min(len(image_data), 3))
+            for i, (img_bytes, _) in enumerate(image_data):
+                cols[i % 3].image(img_bytes, caption=f"Page {i+1}", use_container_width=True)
 
     else:
         raw_text = st.text_area(
@@ -348,7 +350,7 @@ with col_left:
 
     st.markdown('</div>', unsafe_allow_html=True)
 
-    ready = raw_text.strip() or image_data is not None
+    ready = bool(raw_text.strip()) or bool(image_data)
     analyze_btn = st.button("🔍  Analyser le bilan", disabled=not ready)
 
 with col_right:
@@ -408,7 +410,7 @@ if analyze_btn and (raw_text.strip() or image_data):
                         final_treatments = extract_treatments(treat_image_data, treat_media_type)
 
                 if image_data:
-                    report = analyze_image(image_data, image_media_type, patient_ctx, final_treatments)
+                    report = analyze_image(image_data, patient_ctx, final_treatments)
                 else:
                     report = analyze(raw_text, patient_ctx, final_treatments)
 
