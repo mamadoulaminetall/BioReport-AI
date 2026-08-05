@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 from pdf_parser import extract_text_with_diagnostics
 from anonymizer import anonymize_text
 from analyzer import analyze, analyze_image, extract_treatments
+from units import check_critical_values
 from report_pdf import generate_pdf
 
 load_dotenv()
@@ -568,6 +569,9 @@ def _render_report_html(report_text: str, label: str) -> str:
 # ── RIGHT COLUMN ─────────────────────────────────────────────────────────────
 with col_right:
     if st.session_state.current_report:
+        critical_warnings = check_critical_values(st.session_state.current_report)
+        for w in critical_warnings:
+            st.error(w)
         st.markdown(
             _render_report_html(st.session_state.current_report, st.session_state.current_label),
             unsafe_allow_html=True,

@@ -41,6 +41,9 @@ Pour les modes PDF et Texte libre, un module local (`anonymizer.py`) retire les 
 | 📋 | **Recommandations** | Examens complémentaires, délai, avis spécialisé |
 | 💊 | **Recommandations posologiques** | Adaptation des doses selon les résultats + néphroprotection chez le transplanté |
 
+### Vérification indépendante des valeurs critiques
+Pour les paramètres à seuil d'alerte absolu (Na⁺, K⁺, Ca²⁺, Hb, glycémie, créatinine, INR, plaquettes, pH, lactates), `units.py` reparse la sortie structurée du LLM et **recalcule en Python pur, indépendamment**, si le seuil critique est franchi — y compris en reconvertissant les unités alternatives (g/L, mg/dL, mg/L, /mm³…) vers l'unité canonique. Si le calcul déterministe ne concorde pas avec la classification du rapport (ex. : une créatinine en mg/L mal convertie masquerait une valeur critique), une alerte s'affiche en haut du rapport. Ne corrige jamais silencieusement — signale pour vérification humaine.
+
 ### Export
 - **Téléchargement PDF** — rapport A4 mis en page avec header, couleurs par section et bloc patient
 
@@ -102,6 +105,7 @@ BioReport-AI/
 ├── app.py            # Interface Streamlit (UI, formulaire, rendu HTML)
 ├── analyzer.py       # Prompt système + appels Claude API (texte & vision)
 ├── anonymizer.py     # Anonymisation locale (regex, zéro réseau, zéro stockage)
+├── units.py          # Vérification indépendante des seuils critiques (conversions d'unités)
 ├── report_pdf.py     # Génération PDF avec ReportLab
 ├── pdf_parser.py     # Extraction texte + détection PDF scanné (PyMuPDF)
 ├── requirements.txt
