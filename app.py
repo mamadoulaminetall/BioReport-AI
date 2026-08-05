@@ -3,7 +3,8 @@ import streamlit as st
 import os
 import datetime
 from dotenv import load_dotenv
-from pdf_parser import extract_text
+from pdf_parser import extract_text_with_diagnostics
+from anonymizer import anonymize_text
 from analyzer import analyze, analyze_image, extract_treatments
 from report_pdf import generate_pdf
 
@@ -326,10 +327,24 @@ with col_left:
         uploaded = st.file_uploader("", type=["pdf"], label_visibility="collapsed")
         if uploaded:
             with st.spinner("Extraction en cours…"):
-                raw_text = extract_text(uploaded.read())
-            st.success(f"✓ {len(raw_text)} caractères extraits")
-            with st.expander("Aperçu du texte"):
-                st.text(raw_text[:2000] + ("…" if len(raw_text) > 2000 else ""))
+                extracted, diag = extract_text_with_diagnostics(uploaded.read())
+
+            if diag["likely_scanned"]:
+                st.error(
+                    f"⚠️ Ce PDF semble scanné (image), pas du texte natif — "
+                    f"seulement {diag['chars_per_page']} caractères/page extraits sur {diag['pages']} page(s). "
+                    f"L'anonymisation automatique ne fonctionne que sur du texte : elle ne peut pas s'appliquer ici. "
+                    f"Utilisez le mode 📷 Photo (avec vigilance sur le cadrage de l'en-tête) ou ✏️ Texte libre à la place."
+                )
+                raw_text = ""
+            else:
+                raw_text, redaction_report = anonymize_text(extracted)
+                n_redacted = sum(redaction_report.values())
+                st.success(f"✓ {len(raw_text)} caractères extraits · 🔒 {n_redacted} éléments identifiants masqués localement (aucun envoi réseau)")
+                with st.expander("Aperçu du texte anonymisé (envoyé à l'analyse)"):
+                    if redaction_report:
+                        st.caption(" · ".join(f"{k}: {v}" for k, v in redaction_report.items()))
+                    st.text(raw_text[:2000] + ("…" if len(raw_text) > 2000 else ""))
 
     elif input_mode == "📷 Photo":
         uploaded_imgs = st.file_uploader(
@@ -341,12 +356,13 @@ with col_left:
                 (f.read(), f.type if f.type in ("image/jpeg", "image/png", "image/webp") else "image/jpeg")
                 for f in uploaded_imgs
             ]
+            st.warning("⚠️ L'anonymisation automatique ne s'applique pas encore aux photos — évitez de cadrer l'en-tête nominatif, ou préférez le mode PDF.")
             cols = st.columns(min(len(image_data), 3))
             for i, (img_bytes, _) in enumerate(image_data):
                 cols[i % 3].image(img_bytes, caption=f"Page {i+1}", use_container_width=True)
 
     else:
-        raw_text = st.text_area(
+        typed_text = st.text_area(
             "", height=200, label_visibility="collapsed",
             placeholder=(
                 "Hémoglobine : 9.2 g/dL   (N: 12–16)\n"
@@ -355,6 +371,7 @@ with col_left:
                 "Créatinine  : 142 µmol/L (N: 50–100)\n…"
             ),
         )
+        raw_text, _ = anonymize_text(typed_text) if typed_text.strip() else (typed_text, {})
 
     label = st.text_input(
         "", placeholder="Étiquette — Ex: Patient A · NFS 01/05/2026",

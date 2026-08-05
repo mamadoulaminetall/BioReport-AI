@@ -18,9 +18,12 @@ Importez un PDF de résultats biologiques, prenez des photos ou collez les valeu
 ### Saisie des résultats
 | Mode | Description |
 |------|-------------|
-| 📄 **PDF** | Extraction automatique du texte via PyMuPDF |
-| 📷 **Photo** | Envoi direct d'une ou plusieurs photos au modèle Claude Vision |
-| ✏️ **Texte libre** | Copier-coller des valeurs brutes |
+| 📄 **PDF** | Extraction automatique du texte via PyMuPDF, anonymisé localement avant analyse. Un PDF scanné (sans couche de texte) est détecté et bloqué avec un message clair plutôt que de générer un rapport silencieusement vide. |
+| 📷 **Photo** | Envoi direct d'une ou plusieurs photos au modèle Claude Vision (anonymisation automatique non disponible sur ce mode — avertissement affiché) |
+| ✏️ **Texte libre** | Copier-coller des valeurs brutes, anonymisé localement avant analyse |
+
+### Anonymisation locale (avant tout envoi à l'API)
+Pour les modes PDF et Texte libre, un module local (`anonymizer.py`) retire les identifiants directs — nom, date de naissance, NIR, adresse, téléphone, nom du laboratoire, nom et RPPS/ADELI du biologiste signataire, nom du préleveur — **avant** que le texte ne quitte la machine. Aucun appel réseau, aucun stockage : uniquement des expressions régulières (bibliothèque standard Python). Le texte anonymisé est affiché à l'écran avant analyse pour vérification. Limite assumée : un filtrage par règles ne garantit pas une anonymisation irréversible à 100 % — c'est une réduction forte et vérifiable du risque, pas une promesse absolue.
 
 ### Contexte patient
 - Âge, sexe, motif de prescription, antécédents
@@ -98,8 +101,9 @@ Ouvrez [http://localhost:8501](http://localhost:8501)
 BioReport-AI/
 ├── app.py            # Interface Streamlit (UI, formulaire, rendu HTML)
 ├── analyzer.py       # Prompt système + appels Claude API (texte & vision)
+├── anonymizer.py     # Anonymisation locale (regex, zéro réseau, zéro stockage)
 ├── report_pdf.py     # Génération PDF avec ReportLab
-├── pdf_parser.py     # Extraction texte depuis PDF (PyMuPDF)
+├── pdf_parser.py     # Extraction texte + détection PDF scanné (PyMuPDF)
 ├── requirements.txt
 ├── .env.example
 └── .gitignore
